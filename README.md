@@ -114,9 +114,9 @@ aws s3 cp k6-${BUILD_VERSION}-linux-amd64.tar.gz s3://${S3_BUCKET_NAME}/pkg/k6/
 aws s3 cp k6-${BUILD_VERSION}-linux-amd64.tar.gz.sha256 s3://${S3_BUCKET_NAME}/pkg/k6/
 ```
 
-Proceed to update the k6_version variable defaults/main.yml
+Proceed to update `k6_version` variable in [defaults/main.yml](./defaults/main.yml)
 
-# LICENSE
+### License
 
 ```
 Copyright (c) 2021 William Chanrico.
