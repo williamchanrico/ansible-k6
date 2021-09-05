@@ -1,0 +1,78 @@
+---
+# Installer
+k6_version: 'v0.33.0'
+k6_package_name: 'k6-{{ k6_version }}-linux-amd64'
+k6_package_url: 'https://github.com/grafana/k6/releases/download/{{ k6_version }}/{{ k6_package_name }}.tar.gz'
+# https://github.com/grafana/k6/releases/download/v0.33.0/k6-v0.33.0-checksums.txt (fac4439638c1caa38f455d6f4ff37d14c834fa55be968b20c0aa01a0ff30242a  k6-v0.33.0-linux-amd64.tar.gz)
+k6_package_sha256: 'fac4439638c1caa38f455d6f4ff37d14c834fa55be968b20c0aa01a0ff30242a'
+# k6_package_sha256: 'https://github.com/grafana/k6/releases/download/{{ k6_version }}/k6-{{ k6_version }}-checksums.txt'
+
+# Approach 1 - Daemon mode (systemd), is off by default
+# Only support one loadtest script
+
+# Set True, install your own script, and point `k6_systemd_script_file` variable to that script location.
+k6_systemd_enabled: false
+k6_systemd_script_file: '/opt/k6/script.js'
+k6_systemd_flags:
+  # https://k6.io/docs/using-k6/options/
+  dns: 'ttl=2s,select=random,policy=preferIPv4'
+  discard-response-bodies: true
+
+# Approach 2 - Cron mode
+# Support multiple loadtest scripts running periodically
+# Configure env variables, schedule, and the script in-line
+
+# Global env for all crons
+k6_cron_scripts_global_env:
+  {}
+  # K6_OUT: statsd
+  # K6_STATSD_ADDR: localhost:8125
+  # K6_STATSD_ENABLE_TAGS: true
+  # K6_STATSD_TAG_BLOCKLIST: 'vu,iter'
+k6_cron_scripts:
+  {}
+  # - name: http-call
+  #   env:
+  #     K6_DISCARD_RESPONSE_BODIES: "true"
+  #     K6_NO_CONNECTION_REUSE: "true"
+  #     K6_DNS: "ttl=2s,select=random,policy=preferIPv4"
+  #     K6_RPS: 10
+  #     K6_DURATION: 1h
+  #     K6_VUS: 2
+  #   schedule:
+  #     user: root
+  #     minute: 0 # Hourly
+  #     hour: "*"
+  #     day: "*"
+  #     month: "*"
+  #     weekday: "*"
+  #   script: |
+  #     import http from 'k6/http';
+  #     import { check } from 'k6';
+  #     import { group } from 'k6';
+  #
+  #     http.setResponseCallback(http.expectedStatuses(200));
+  #
+  #     export default function () {
+  #       let params = {
+  #         headers: {
+  #           'X-Request-Xyz': '123',
+  #         },
+  #       };
+  #
+  #       group('http-from-gcp-to-gcp', function () {
+  #         let res = http.get('https://example.com/loadtest', params);
+  #         check(res, {
+  #           'http_success': (res) => res.status == 200,
+  #         });
+  #       });
+  #     }
+
+# One of K6 Output Support Using Statsd (https://k6.io/docs/results-visualization/statsd/)
+k6_enable_statsd: false
+k6_statsd_addr: '127.0.0.1:8125'
+k6_statsd_enable_tags: true
+k6_statsd_buffer_size: 20
+k6_statsd_namespace: 'k6'
+k6_statsd_push_interval: '1s'
+k6_statsd_tag_blocklist: 'vu,iter'

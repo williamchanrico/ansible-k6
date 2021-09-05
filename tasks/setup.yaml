@@ -1,0 +1,78 @@
+---
+- name: Create K6 Directory
+  file:
+    path: /opt/k6
+    state: directory
+    mode: 0755
+
+- name: Create K6 Log Directory
+  file:
+    path: /var/log/k6
+    state: directory
+    mode: 0755
+
+- name: Install K6 Cron Loadtest Scripts
+  block:
+    - name: Install K6 Scripts
+      template:
+        src: 'script.sh.j2'
+        dest: '/opt/k6/{{ item.name }}.sh'
+        mode: 0755
+      loop: '{{ k6_cron_scripts }}'
+
+    - name: Show Installed K6 Scripts
+      debug:
+        msg: '{{ item.name }}'
+      loop: '{{ k6_cron_scripts }}'
+
+    - name: Schedule K6 Cron Schedules
+      cron:
+        name: '{{ item.id | default(item.name) }}'
+        cron_file: "{{ 'ansible_cron_loadtest_' ~ item.name if ansible_os_family != 'Solaris' else 'crontabs/' ~ item.user }}"
+        user: '{{ item.schedule.user }}'
+        hour: '{{ item.schedule.hour | default(omit) }}'
+        minute: '{{ item.schedule.minute | default(omit) }}'
+        day: '{{ item.schedule.day | default(omit) }}'
+        month: '{{ item.schedule.month | default(omit) }}'
+        weekday: '{{ item.schedule.weekday | default(omit) }}'
+        job: '/opt/k6/{{ item.name }}.sh >/var/log/k6/{{ item.name }}.log 2>&1'
+        state: '{{ item.schedule.state | default(omit) }}'
+      loop: '{{ k6_cron_scripts }}'
+  when: k6_cron_scripts | length
+  tags: k6_cron_scripts_config
+
+- name: Download K6
+  become: yes
+  get_url:
+    url: '{{ k6_package_url }}'
+    checksum: 'sha256:{{ k6_package_sha256 }}'
+    dest: /opt/k6
+    validate_certs: no
+
+- name: Unarchive K6
+  become: yes
+  unarchive:
+    remote_src: yes
+    src: '/opt/k6/{{ k6_package_name }}.tar.gz'
+    dest: /opt/k6
+
+- name: Create symlink to K6
+  become: yes
+  file:
+    src: '/opt/k6/{{ k6_package_name }}/k6'
+    path: /usr/bin/k6
+    state: link
+
+- name: Setup k6.service systemd file
+  template:
+    src: k6.service.j2
+    dest: /etc/systemd/system/k6.service
+
+- name: Start k6 systemd service
+  become: yes
+  systemd:
+    name: k6.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  when: k6_systemd_enabled

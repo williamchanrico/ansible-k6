@@ -1,0 +1,23 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=K6 Loadtest
+After=network-online.target
+
+[Service]
+{% if k6_enable_statsd %}
+Environment="K6_STATSD_ADDR={{ k6_statsd_addr }}"
+Environment="K6_STATSD_ENABLE_TAGS={{ k6_statsd_enable_tags }}"
+Environment="K6_STATSD_BUFFER_SIZE={{ k6_statsd_buffer_size }}"
+Environment="K6_STATSD_NAMESPACE={{ k6_statsd_namespace }}"
+Environment="K6_STATSD_PUSH_INTERVAL={{ k6_statsd_push_interval }}"
+Environment="K6_STATSD_TAG_BLOCKLIST={{ k6_statsd_tag_blocklist }}"
+{% endif %}
+User=root
+ExecStart=/usr/bin/k6 run {% for flag, flag_value in k6_systemd_flags.items() %}\
+    --{{ flag }}{% if flag_value %}={{ flag_value }}{% endif %} {% endfor %} {{ k6_systemd_script_file }}
+
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

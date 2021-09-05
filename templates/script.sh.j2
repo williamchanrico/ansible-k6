@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+{{ ansible_managed | comment }}
+
+# {{ item.name }}.sh - Cron script schedule:
+# {{ item.schedule.keys() | join('\t') }}
+# {{ item.schedule.values() | join('\t') }}
+
+# Available K6 options: https://k6.io/docs/using-k6/options/
+{% for key, value in k6_cron_scripts_global_env.items() -%}
+export {{ key }}="{{ value }}"
+{% endfor %}
+{% if item.env is defined %}
+{% for key, value in item.env.items() -%}
+export {{ key }}="{{ value }}"
+{% endfor %}
+{% endif %}
+
+# Source playbook: {{ ansible_play_name }}
+/usr/bin/k6 run - <<EOF
+{{ item.script }}
+EOF
