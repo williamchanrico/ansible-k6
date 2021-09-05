@@ -17,14 +17,14 @@ We can set multiple k6 instances within a single host via `k6_cron_scripts`.
 ---
 - name: Example K6 Playbook
   vars:
-			
+
     # Ref: https://k6.io/docs/using-k6/options/
     k6_cron_scripts_global_env:
       K6_OUT: statsd
       K6_STATSD_ADDR: localhost:8130
       K6_STATSD_ENABLE_TAGS: "true"
       K6_STATSD_TAG_BLOCKLIST: "vu,iter"
-	  
+
     k6_cron_scripts:
       - name: http-call
         env:
@@ -45,16 +45,16 @@ We can set multiple k6 instances within a single host via `k6_cron_scripts`.
           import http from 'k6/http';
           import { check } from 'k6';
           import { group } from 'k6';
-    
+
           http.setResponseCallback(http.expectedStatuses(200));
-    
+
           export default function () {
             let params = {
               headers: {
                 'X-Request-Xyz': '123',
               },
             };
-    
+
             group('http-from-gcp-to-gcp', function () {
               let res = http.get('https://example.com/loadtest', params);
               check(res, {
